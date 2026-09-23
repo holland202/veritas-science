@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veritas evidence schema",
+  "type": "object",
+  "required": ["evidence_id", "observation_id", "evidence_state", "source_type", "source_identifier", "timestamp", "content_hash"],
+  "properties": {
+    "evidence_id": {"type": "string"},
+    "observation_id": {"type": "string"},
+    "evidence_state": {"type": "string", "enum": ["MEASURED", "DERIVED", "INFERRED", "OPERATOR", "ABSENT", "DEFAULTED", "UNVERIFIED", "NEVER_WIRED"]},
+    "source_type": {"type": "string"},
+    "source_identifier": {"type": "string"},
+    "timestamp": {"type": "string"},
+    "content_hash": {"type": "string"},
+    "provenance": {"type": "object"},
+    "integrity": {"type": "object"},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}

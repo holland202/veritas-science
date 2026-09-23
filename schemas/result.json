@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veritas result schema",
+  "type": "object",
+  "required": ["protocol_id", "result_id", "status", "evidence"],
+  "properties": {
+    "protocol_id": {"type": "string"},
+    "result_id": {"type": "string"},
+    "status": {"type": "string"},
+    "evidence": {"type": "array", "items": {"type": "object"}},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}

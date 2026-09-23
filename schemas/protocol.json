@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veritas protocol schema",
+  "type": "object",
+  "required": ["protocol_id", "claim_text", "claim_type", "implementation", "environment"],
+  "properties": {
+    "protocol_id": {"type": "string"},
+    "claim_text": {"type": "string"},
+    "claim_type": {"type": "string"},
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "null_hypothesis": {"type": ["string", "null"]},
+    "implementation": {"type": "object"},
+    "environment": {"type": "object"},
+    "seed": {"type": ["integer", "null"]},
+    "parent_digest": {"type": ["string", "null"]},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}

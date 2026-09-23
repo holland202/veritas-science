@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veritas verdict schema",
+  "type": "object",
+  "required": ["verdict", "reasons", "evidence_ids"],
+  "properties": {
+    "verdict": {"type": "string", "enum": ["SUPPORTED", "REFUTED", "INSUFFICIENT_EVIDENCE", "INVALID_EVIDENCE", "VOID"]},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}
