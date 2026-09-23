@@ -1,0 +1,57 @@
+import argparse
+from pathlib import Path
+from .attacks import attack
+from .core import read_json, write_json
+from .experiment import check_prediction, run
+from .protocol import freeze
+
+
+def demo_protocol():
+    return {
+        "title": "Deterministic threshold demonstration",
+        "claim": "The fixed threshold classifier improves on majority baseline by at least 0.10.",
+        "epistemic_status": "measured",
+        "assumptions": ["rows are independent", "y is binary", "threshold is fixed before evaluation"],
+        "prior_art": ["Majority-class accuracy is a baseline."],
+        "hypothesis": "accuracy_minus_majority >= 0.10",
+        "null": "accuracy_minus_majority < 0.10",
+        "predictions": [{"id": "P1", "metric": "effect", "null": "effect < 0.10", "direction": "greater", "threshold": 0.10, "alpha": 0.05, "n_min": 20, "anti_vacuity": {"require_finite": True}}],
+        "implementation": {"name": "threshold", "version": "1", "threshold": 0.5},
+        "data_contract": {"fields": {"x": "finite number", "y": "0 or 1"}},
+        "analysis": {"order_invariant": True, "seed": 7, "sealed_data": False},
+    }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="veritas")
+    sub = parser.add_subparsers(dest="command", required=True)
+    demo = sub.add_parser("demo"); demo.add_argument("--out", default="run")
+    attack_cmd = sub.add_parser("attack"); attack_cmd.add_argument("protocol"); attack_cmd.add_argument("--out", required=True)
+    experiment = sub.add_parser("experiment"); experiment.add_argument("protocol"); experiment.add_argument("--data", required=True); experiment.add_argument("--out", required=True)
+    verdict = sub.add_parser("verdict"); verdict.add_argument("protocol"); verdict.add_argument("attacks"); verdict.add_argument("result"); verdict.add_argument("--out", required=True)
+    args = parser.parse_args(argv)
+
+    if args.command == "demo":
+        out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
+        protocol = freeze(demo_protocol())
+        data = [{"x": i / 100, "y": int(i >= 50)} for i in range(100)]
+        write_json(out / "protocol.json", protocol); write_json(out / "data.json", data)
+        write_json(out / "attacks.json", attack(protocol["payload"]))
+        write_json(out / "result.json", run(protocol["payload"], data, 7))
+        print(f"wrote {out}")
+        return 0
+
+    protocol = read_json(args.protocol)["payload"]
+    if args.command == "attack":
+        write_json(args.out, attack(protocol))
+    elif args.command == "experiment":
+        write_json(args.out, run(protocol, read_json(args.data), protocol["analysis"].get("seed")))
+    else:
+        attacks = read_json(args.attacks); result = read_json(args.result)
+        checks = [check_prediction(p, result) for p in protocol["predictions"]]
+        status = "SUPPORTED" if attacks["passed"] and all(x["status"] == "SUPPORTED" for x in checks) else "NOT_SUPPORTED"
+        write_json(args.out, {"status": status, "qualification": "conditional on this protocol, implementation, data, and verifier", "predictions": checks, "attacks": attacks, "result": result})
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
