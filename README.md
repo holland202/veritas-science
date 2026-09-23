@@ -1,5 +1,11 @@
 # veritas-science
 
+<p align="center">
+  <img src="assets/veritas-banner.svg" alt="Veritas Science — evidence-first, fail-closed, adversarial scientific validation" width="100%" />
+</p>
+
+<p align="center"><strong>Executable scientific validation for claims that must survive scrutiny.</strong></p>
+
 MIT-licensed scientific validation framework for claims, evidence, protocol execution, verifier qualification, and adversarial probing.
 
 ## Core principle
@@ -39,11 +45,20 @@ This repository defines the common scientific core:
 
 It does not define a domain-specific detector or claim. Domain-specific logic belongs in external adapters pinned to a repository and commit.
 
+## Quick start
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+python -m veritas demo
+python -m veritas check
+python -m veritas lint .
+```
+
 ## Open-source policy
 
-This project is MIT-licensed.
-
-The core implementation is original to this repository. Upstream research repositories are cited as references and external subjects, not runtime dependencies.
+This project is MIT-licensed. The core implementation is original to this repository. Upstream research repositories are cited as references and external subjects, not runtime dependencies.
 
 The attribution and integration policy is documented in `ATTRIBUTION.md` and `docs/integration.md`.
 
@@ -51,35 +66,14 @@ The attribution and integration policy is documented in `ATTRIBUTION.md` and `do
 
 ```text
 veritas-science/
+├── assets/veritas-banner.svg  # README identity banner
 ├── LICENSE
-├── README.md
 ├── ATTRIBUTION.md
 ├── pyproject.toml
-├── veritas/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── cli.py
-│   ├── evidence.py
-│   ├── verdict.py
-│   ├── provenance.py
-│   ├── attacks/
-│   │   ├── __init__.py
-│   │   ├── vacuity.py
-│   │   └── mutation.py
-│   └── adapters/
-│       ├── __init__.py
-│       ├── README.md
-│       └── hai.py
-├── schemas/
-│   ├── protocol.json
-│   ├── evidence.json
-│   ├── result.json
-│   └── verdict.json
-├── tests/
-│   └── test_core_contracts.py
-└── docs/
-    ├── architecture.md
-    └── integration.md
+├── veritas/                   # evidence, verdicts, provenance, attacks
+├── schemas/                   # machine-readable contracts
+├── tests/                     # core contract tests
+└── docs/                      # architecture and adapter policy
 ```
 
 ## Core workflow
@@ -102,17 +96,7 @@ Qualified verdict
 
 ## First formal adapter
 
-The first adapter is a pinned repository adapter for the Sentinel HAI benchmark flow.
-
-It records:
-
-- source repository
-- exact commit
-- adapter name
-- limitations
-- execution contract boundary
-
-This adapter does not import the external code. It keeps the boundary explicit and narrow.
+The first adapter is a pinned repository adapter for the Sentinel HAI benchmark flow. It records the source repository, exact commit, adapter name, limitations, and execution contract boundary without importing external code.
 
 ## License
 
