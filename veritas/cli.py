@@ -2,84 +2,71 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
-from .attacks.vacuity import scan
-from .evidence import EvidenceRecord, EvidenceState
-from .provenance import manifest
-from .verdict import Verdict, fail_closed
+from .attacks import attack
+from .core import read_json, write_json
+from .experiment import check_prediction, run
+from .protocol import freeze
 
 
-def _example_records() -> list[EvidenceRecord]:
-    return [
-        EvidenceRecord(
-            evidence_id="e-1",
-            observation_id="o-1",
-            evidence_state=EvidenceState.MEASURED,
-            source_type="simulation",
-            source_identifier="demo",
-            timestamp="2026-01-01T00:00:00Z",
-            content_hash="abcd1234",
-            provenance={"status": "ASSERTED"},
-            integrity={"valid": True},
-            metadata={"value": 42.0},
-        )
-    ]
+def demo_protocol() -> dict:
+    """Return the original deterministic threshold demonstration protocol."""
+    return {
+        "title": "Deterministic threshold demonstration",
+        "claim": "The fixed threshold classifier improves on majority baseline by at least 0.10.",
+        "epistemic_status": "measured",
+        "assumptions": ["rows are independent", "y is binary", "threshold is fixed before evaluation"],
+        "prior_art": ["Majority-class accuracy is a baseline."],
+        "hypothesis": "accuracy_minus_majority >= 0.10",
+        "null": "accuracy_minus_majority < 0.10",
+        "predictions": [{
+            "id": "P1", "metric": "effect", "null": "effect < 0.10", "direction": "greater",
+            "threshold": 0.10, "alpha": 0.05, "n_min": 20,
+            "anti_vacuity": {"require_finite": True, "reject_degenerate": True},
+        }],
+        "implementation": {"name": "threshold", "version": "1", "threshold": 0.5},
+        "data_contract": {"fields": {"x": "finite number", "y": "0 or 1"}},
+        "analysis": {"order_invariant": True, "seed": 7, "sealed_data": False},
+    }
 
 
-def _lint_command(path: str) -> int:
-    result = scan(path)
-    print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result["status"] in {"CLEAN", "NOT_APPLICABLE"} else 1
-
-
-def _manifest_command(path: str) -> int:
-    root = Path(path)
-    selected = [p.name for p in root.rglob("*.py")] if root.is_dir() else [root.name]
-    data = manifest(root, files=selected, seed=2026)
-    print(json.dumps(data, indent=2, sort_keys=True))
+def _demo(out: str) -> int:
+    path = Path(out)
+    path.mkdir(parents=True, exist_ok=True)
+    protocol = freeze(demo_protocol())
+    data = [{"x": i / 100, "y": int(i >= 50)} for i in range(100)]
+    write_json(path / "protocol.json", protocol)
+    write_json(path / "data.json", data)
+    write_json(path / "attacks.json", attack(protocol["payload"]))
+    write_json(path / "result.json", run(protocol["payload"], data, 7))
+    print(f"wrote {path}")
     return 0
-
-
-def _check_command() -> int:
-    result = fail_closed(_example_records())
-    print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
-    return 0 if result.verdict is not Verdict.INVALID_EVIDENCE else 1
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="veritas")
     sub = parser.add_subparsers(dest="command", required=True)
-
-    lint = sub.add_parser("lint", help="scan a file or tree for vacuity-related fail-path issues")
-    lint.add_argument("path")
-
-    manifest = sub.add_parser("manifest", help="build a provenance manifest for a repository or directory")
-    manifest.add_argument("path", nargs="?", default=".")
-
-    check = sub.add_parser("check", help="evaluate a strict measured-only evidence contract")
-
-    demo = sub.add_parser("demo", help="print a minimal example verdict and evidence bundle")
-
+    demo = sub.add_parser("demo"); demo.add_argument("--out", default="run")
+    attack_cmd = sub.add_parser("attack"); attack_cmd.add_argument("protocol"); attack_cmd.add_argument("--out", required=True)
+    experiment = sub.add_parser("experiment"); experiment.add_argument("protocol"); experiment.add_argument("--data", required=True); experiment.add_argument("--out", required=True)
+    verdict = sub.add_parser("verdict"); verdict.add_argument("protocol"); verdict.add_argument("attacks"); verdict.add_argument("result"); verdict.add_argument("--out", required=True)
     args = parser.parse_args(argv)
-
-    if args.command == "lint":
-        return _lint_command(args.path)
-    if args.command == "manifest":
-        return _manifest_command(args.path)
-    if args.command == "check":
-        return _check_command()
     if args.command == "demo":
-        result = fail_closed(_example_records())
-        payload = {
-            "evidence": [r.to_dict() for r in _example_records()],
-            "verdict": result.to_dict(),
-        }
-        print(json.dumps(payload, indent=2, sort_keys=True))
-        return 0
-
-    parser.error(f"unknown command: {args.command}")
-    return 2
+        return _demo(args.out)
+    protocol_obj = read_json(args.protocol)
+    protocol = protocol_obj.get("payload", protocol_obj)
+    if args.command == "attack":
+        write_json(args.out, attack(protocol))
+    elif args.command == "experiment":
+        write_json(args.out, run(protocol, read_json(args.data), protocol["analysis"].get("seed")))
+    else:
+        attacks, result = read_json(args.attacks), read_json(args.result)
+        checks = [check_prediction(p, result) for p in protocol["predictions"]]
+        status = "SUPPORTED" if attacks["passed"] and all(x["status"] == "SUPPORTED" for x in checks) else "NOT_SUPPORTED"
+        write_json(args.out, {"status": status, "qualification": "conditional on this protocol, implementation, data, and verifier", "predictions": checks, "attacks": attacks, "result": result})
+    return 0
 
 
 if __name__ == "__main__":
