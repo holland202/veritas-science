@@ -1,19 +1,47 @@
-# Veritas reconciliation decision
+# Veritas state machine
 
-The repository contains two useful generations that are now intentionally separated:
-
-1. **Prediction layer** — the original executable threshold demonstration produces `SUPPORTED`, `NOT_SUPPORTED`, or `INDETERMINATE` for a preregistered prediction.
-2. **Evidence/verifier layer** — evidence admissibility and verifier status are evaluated independently.
-3. **Claim layer** — only the combination of valid protocol, admissible evidence, a passing verifier, and a prediction status produces a claim verdict.
-
-The canonical flow is:
+The repository has one canonical layered interpretation:
 
 ```text
-CLAIM → PREREGISTERED → FROZEN → EXECUTED
-     → EVIDENCE ADMISSIBILITY + VERIFIER ATTACKS
-     → PREDICTION TEST → CLAIM VERDICT
+CLAIM
+  ↓
+PREREGISTERED → FROZEN
+  ↓
+EXECUTED
+  ├── evidence admissibility
+  ├── verifier attacks
+  └── prediction test
+          ↓
+     CLAIM VERDICT
 ```
 
-Measured evidence is a prerequisite, never a conclusion. The compatibility function `fail_closed()` therefore returns `INSUFFICIENT_EVIDENCE` for measured records when no claim comparison is supplied. Use `claim_verdict()` for the final epistemic mapping.
+## Separate state machines
 
-The layers remain separate because `NOT_SUPPORTED` is a prediction outcome, while `REFUTED` is a qualified claim outcome. A low metric, invalid sample, failed gate, and void protocol are not interchangeable.
+### Prediction layer
+
+The original experiment runner returns:
+
+- `SUPPORTED` — the registered prediction threshold was met;
+- `NOT_SUPPORTED` — the threshold was not met or an anti-vacuity rule rejected it;
+- `INDETERMINATE` — the metric was missing or non-finite;
+- `INVALID` — the result cannot be interpreted under the prediction contract.
+
+### Verifier layer
+
+The verifier reports:
+
+- `PASS` — registered attack controls passed;
+- `FAIL` — a control detected a verifier weakness;
+- `NOT_TESTED` — no attack qualification was performed.
+
+### Claim layer
+
+Only the combination of a valid protocol, admissible evidence, a passing verifier, and a prediction result produces a claim verdict:
+
+- `SUPPORTED`
+- `REFUTED`
+- `INSUFFICIENT_EVIDENCE`
+- `INVALID_EVIDENCE`
+- `VOID`
+
+Measured evidence is a prerequisite for evaluating support. It is never support by itself. `fail_closed()` therefore returns `INSUFFICIENT_EVIDENCE` for measured records when no claim comparison is supplied.

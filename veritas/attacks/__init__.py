@@ -1,4 +1,8 @@
-"""Compatibility exports and attack orchestration for the original Veritas API."""
+"""Canonical verifier-attack package.
+
+The legacy ``veritas/attacks.py`` module remains as a compatibility artifact;
+new imports use this package so ``veritas.attacks.vacuity`` is stable.
+"""
 from __future__ import annotations
 
 from ..experiment import check_prediction
@@ -8,7 +12,7 @@ from .vacuity import scan
 
 
 def attack(protocol: dict) -> dict:
-    """Run verifier controls; these test the instrument, not the claim."""
+    """Run instrument controls, not scientific claim tests."""
     errors = validate_protocol(protocol)
     predictions = protocol.get("predictions", [])
     reports = [

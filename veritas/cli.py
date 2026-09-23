@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
-import math
 from pathlib import Path
 
 from .attacks import attack
@@ -12,7 +10,7 @@ from .protocol import freeze
 
 
 def demo_protocol() -> dict:
-    """Return the original deterministic threshold demonstration protocol."""
+    """Return the original executable threshold protocol."""
     return {
         "title": "Deterministic threshold demonstration",
         "claim": "The fixed threshold classifier improves on majority baseline by at least 0.10.",

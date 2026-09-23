@@ -1,7 +1,7 @@
 """Layered verdict semantics for Veritas.
 
-Prediction status, verifier status, and claim verdict are deliberately separate
-state machines.  Measured evidence is admissible input, not a claim conclusion.
+Prediction status, verifier status, and claim verdict are separate state
+machines. Measured evidence is admissible input, not a claim conclusion.
 """
 from __future__ import annotations
 
@@ -50,17 +50,12 @@ class VerdictResult:
 
 
 def admissibility(records: Iterable[EvidenceRecord]) -> VerdictResult | None:
-    """Return a blocking result, or ``None`` when evidence is admissible.
-
-    Admissibility is intentionally not support. A later claim evaluator must
-    compare an admissible result with the preregistered prediction and null.
-    """
+    """Return a blocking result, or ``None`` when evidence is admissible."""
     items = list(records)
     ids = [r.evidence_id for r in items]
     if not items:
         return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["no evidence supplied"], ids)
-    invalid = [r for r in items if not r.content_hash or r.integrity.get("valid") is False]
-    if invalid:
+    if any(not r.content_hash or r.integrity.get("valid") is False for r in items):
         return VerdictResult(Verdict.INVALID_EVIDENCE, ["evidence integrity is invalid"], ids)
     inadmissible = [r for r in items if r.evidence_state is not EvidenceState.MEASURED]
     if inadmissible:
@@ -70,12 +65,7 @@ def admissibility(records: Iterable[EvidenceRecord]) -> VerdictResult | None:
 
 
 def fail_closed(records: Iterable[EvidenceRecord]) -> VerdictResult:
-    """Compatibility wrapper: validate admissibility, never infer support.
-
-    A collection of measured records alone is not a supported claim. It is
-    returned as ``INSUFFICIENT_EVIDENCE`` until a prediction evaluator supplies
-    the claim comparison and verifier result.
-    """
+    """Check admissibility without claiming that measured evidence proves a claim."""
     items = list(records)
     blocked = admissibility(items)
     if blocked is not None:
@@ -95,7 +85,7 @@ def claim_verdict(
     protocol_valid: bool = True,
     void_reason: str | None = None,
 ) -> VerdictResult:
-    """Translate the independent layers into a qualified claim verdict."""
+    """Combine protocol, evidence, verifier, and prediction layers."""
     items = list(records)
     ids = [r.evidence_id for r in items]
     if not protocol_valid:
@@ -114,3 +104,9 @@ def claim_verdict(
     if p is PredictionStatus.INVALID:
         return VerdictResult(Verdict.INVALID_EVIDENCE, ["prediction result is invalid"], ids)
     return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction result is indeterminate"], ids)
+
+
+__all__ = [
+    "PredictionStatus", "VerifierStatus", "Verdict", "VerdictResult",
+    "admissibility", "claim_verdict", "fail_closed",
+]

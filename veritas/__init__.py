@@ -1,16 +1,19 @@
-from veritas.evidence import EvidenceRecord, EvidenceState
-from veritas.verdict import (
-    ClaimVerdict,
+"""Veritas scientific validation framework."""
+__version__ = "0.1.1"
+
+from .evidence import EvidenceRecord, EvidenceState, ResearchStatus
+from .verdict import (
     PredictionStatus,
+    VerifierStatus,
     Verdict,
     VerdictResult,
-    VerifierStatus,
     admissibility,
     claim_verdict,
     fail_closed,
 )
 
 __all__ = [
-    "EvidenceRecord", "EvidenceState", "PredictionStatus", "VerifierStatus",
-    "Verdict", "VerdictResult", "admissibility", "claim_verdict", "fail_closed",
+    "__version__", "EvidenceRecord", "EvidenceState", "ResearchStatus",
+    "PredictionStatus", "VerifierStatus", "Verdict", "VerdictResult",
+    "admissibility", "claim_verdict", "fail_closed",
 ]
