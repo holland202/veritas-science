@@ -1,4 +1,5 @@
 import math
+from . import __version__
 from .core import sha256, environment
 
 
@@ -20,7 +21,7 @@ def run(protocol, data, seed=None):
     return {"n": len(y), "accuracy": accuracy, "majority_baseline": baseline,
             "effect": accuracy - baseline, "data_digest": sha256(data),
             "implementation_digest": sha256(protocol["implementation"]),
-            "seed": seed, "environment": environment()}
+            "seed": seed, "environment": {**environment(), "veritas": __version__}}
 
 
 def check_prediction(prediction, result):

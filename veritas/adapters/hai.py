@@ -7,7 +7,7 @@ analysis remains external and versioned.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from veritas.adapters import ExternalAdapter
@@ -17,6 +17,7 @@ from veritas.adapters import ExternalAdapter
 class HAIAdapterSpec:
     repository: str = "https://github.com/holland202/sentinel-hai-validation"
     commit: str = "1faf2e2e6f002f76c92d52e931842b6bd2634eaa"
+    name: str = "sentinel_hai"
     protocol_name: str = "sentinel_hai_validation"
     gate_names: tuple[str, ...] = (
         "P0a",
@@ -54,7 +55,7 @@ class HAIAdapterSpec:
             }
 
         return ExternalAdapter(
-            name=self.protocol_name,
+            name=self.name,
             repository=self.repository,
             commit=self.commit,
             runner=runner,
