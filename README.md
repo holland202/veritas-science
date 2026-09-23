@@ -1,27 +1,127 @@
-# Veritas Science
+# veritas-science
 
-**An executable scientific validation pipeline that treats the verifier as a falsifiable object.**
+MIT-licensed scientific validation framework for claims, evidence, protocol execution, verifier qualification, and adversarial probing.
 
-Veritas turns a claim into a versioned, hashed protocol; runs deterministic reference implementations; attacks the analysis with nulls, sabotage, metamorphic tests, dependence checks, ties, numerical edge cases, and vacuity checks; then emits a verdict whose failures remain in the record.
+## Core principle
 
-## Quick start
+A result is not meaningful because a script printed a number or a model emitted a verdict. A result is meaningful only when:
 
-```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -e .
-veritas demo --out run
-veritas attack run/protocol.json --out run/attacks.json
-veritas experiment run/protocol.json --data run/data.json --out run/result.json
-veritas verdict run/protocol.json run/attacks.json run/result.json --out run/verdict.json
-python -m unittest discover -s tests -v
+- the claim is explicit,
+- the protocol is fixed,
+- the evidence is classified,
+- the verifier is fail-closed,
+- the result is bound to provenance,
+- the verifier has been attacked or probed,
+- the result remains conditional on the protocol and environment.
+
+## Design principles
+
+- Evidence state is not research status.
+- Missing, inferred, defaulted, or untrusted evidence never becomes measured evidence.
+- Positive claims require explicit contracts.
+- A verifier must be fail-closed.
+- A gate that cannot fail is not evidence.
+- Reproduction is not verification.
+- A result is only as good as the protocol, implementation, data, and provenance that produced it.
+- External implementations are treated as pinned adapters, not implicit evidence.
+
+## Scope
+
+This repository defines the common scientific core:
+
+- evidence states
+- provenance manifests
+- verdict semantics
+- contract-style validation
+- anti-vacuity checks
+- mutation-style dependence checks
+- external adapter boundaries
+
+It does not define a domain-specific detector or claim. Domain-specific logic belongs in external adapters pinned to a repository and commit.
+
+## Open-source policy
+
+This project is MIT-licensed.
+
+The core implementation is original to this repository. Upstream research repositories are cited as references and external subjects, not runtime dependencies.
+
+The attribution and integration policy is documented in `ATTRIBUTION.md` and `docs/integration.md`.
+
+## Repository structure
+
+```text
+veritas-science/
+├── LICENSE
+├── README.md
+├── ATTRIBUTION.md
+├── pyproject.toml
+├── veritas/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── evidence.py
+│   ├── verdict.py
+│   ├── provenance.py
+│   ├── attacks/
+│   │   ├── __init__.py
+│   │   ├── vacuity.py
+│   │   └── mutation.py
+│   └── adapters/
+│       ├── __init__.py
+│       ├── README.md
+│       └── hai.py
+├── schemas/
+│   ├── protocol.json
+│   ├── evidence.json
+│   ├── result.json
+│   └── verdict.json
+├── tests/
+│   └── test_core_contracts.py
+└── docs/
+    ├── architecture.md
+    └── integration.md
 ```
 
-The demo is a fully executable synthetic experiment. It demonstrates the machinery, including an explicit null, anti-vacuity policy, and verifier attack controls. It is not evidence for a real-world scientific claim. Its perfect synthetic result is deliberately rejected by the anti-vacuity policy.
+## Core workflow
 
-## Pipeline
+```text
+Claim
+  ↓
+Protocol / frozen contract
+  ↓
+Implementation
+  ↓
+Measured or recorded evidence
+  ↓
+Verifier / fail-closed gate
+  ↓
+Provenance manifest
+  ↓
+Qualified verdict
+```
 
-`claim → assumptions → prior art → preregistration → implementation → attack → freeze → sealed run → verdict → replication → admission/refutation`
+## First formal adapter
 
-Artifacts are canonical JSON with SHA-256 digests. Amendments create a new protocol with `parent_digest`; history is not overwritten. Results include protocol, data, implementation, and environment metadata.
+The first adapter is a pinned repository adapter for the Sentinel HAI benchmark flow.
 
-The default runner is intentionally dependency-free and conservative. Before using real data, add domain-appropriate handling for dependence, missingness, confidence intervals, multiple comparisons, and data sealing. See `SECURITY.md` and `docs/architecture.md`.
+It records:
+
+- source repository
+- exact commit
+- adapter name
+- limitations
+- execution contract boundary
+
+This adapter does not import the external code. It keeps the boundary explicit and narrow.
+
+## License
+
+MIT. See `LICENSE`.
+
+## Author
+
+Chad Edward Holland
+
+## Citation
+
+If you use this project, cite the repository and preserve the MIT notice.
