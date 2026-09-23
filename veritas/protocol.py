@@ -3,6 +3,7 @@ from .core import envelope
 STATUSES={"established","derived","conjectural","measured","exploratory"}
 REQUIRED=("title","claim","epistemic_status","assumptions","prior_art","hypothesis","null","predictions","implementation","data_contract","analysis")
 
+
 def validate_protocol(p):
     errors=["missing:"+k for k in REQUIRED if k not in p]
     if p.get("epistemic_status") not in STATUSES: errors.append("invalid epistemic_status")
@@ -22,7 +23,9 @@ def validate_protocol(p):
         if not 0 < x.get("alpha",0) < 1: errors.append("alpha must be in (0,1)")
         if x.get("n_min",0) < 2: errors.append("n_min must be >= 2")
         if not isinstance(x.get("anti_vacuity"),dict) or not x.get("anti_vacuity"): errors.append("anti-vacuity rule required")
+        if "refutes_claim" in x and not isinstance(x["refutes_claim"], bool): errors.append("refutes_claim must be boolean")
     return errors
+
 
 def freeze(p,parent_digest=None):
     errors=validate_protocol(p)

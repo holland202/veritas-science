@@ -83,9 +83,16 @@ def claim_verdict(
     prediction: PredictionStatus | str,
     verifier: VerifierStatus | str,
     protocol_valid: bool = True,
+    refutation_criterion: bool = False,
     void_reason: str | None = None,
 ) -> VerdictResult:
-    """Combine protocol, evidence, verifier, and prediction layers."""
+    """Combine protocol, evidence, verifier, and prediction layers.
+
+    A failed prediction becomes ``REFUTED`` only when the frozen protocol
+    explicitly designates that prediction as a claim-refutation criterion.
+    Otherwise it remains ``INSUFFICIENT_EVIDENCE``: failure to support a
+    prediction is not automatically evidence that the broader claim is false.
+    """
     items = list(records)
     ids = [r.evidence_id for r in items]
     if not protocol_valid:
@@ -99,8 +106,10 @@ def claim_verdict(
         return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, [f"verifier status: {v.value}"], ids)
     if p is PredictionStatus.SUPPORTED:
         return VerdictResult(Verdict.SUPPORTED, ["prediction supported under the valid protocol and verifier"], ids)
+    if p is PredictionStatus.NOT_SUPPORTED and refutation_criterion:
+        return VerdictResult(Verdict.REFUTED, ["refutation criterion was not supported under the valid protocol"], ids)
     if p is PredictionStatus.NOT_SUPPORTED:
-        return VerdictResult(Verdict.REFUTED, ["prediction was not supported under the valid protocol"], ids)
+        return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction was not supported; protocol does not designate it as a refutation criterion"], ids)
     if p is PredictionStatus.INVALID:
         return VerdictResult(Verdict.INVALID_EVIDENCE, ["prediction result is invalid"], ids)
     return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction result is indeterminate"], ids)

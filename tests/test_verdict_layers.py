@@ -21,8 +21,16 @@ def test_supported_prediction_and_passing_verifier_support_claim():
     assert result.verdict is Verdict.SUPPORTED
 
 
-def test_unsupported_prediction_and_passing_verifier_refute_claim():
+def test_unsupported_prediction_without_refutation_criterion_is_insufficient():
     result = claim_verdict([record()], prediction=PredictionStatus.NOT_SUPPORTED, verifier=VerifierStatus.PASS)
+    assert result.verdict is Verdict.INSUFFICIENT_EVIDENCE
+
+
+def test_unsupported_refutation_criterion_refutes_claim():
+    result = claim_verdict(
+        [record()], prediction=PredictionStatus.NOT_SUPPORTED,
+        verifier=VerifierStatus.PASS, refutation_criterion=True,
+    )
     assert result.verdict is Verdict.REFUTED
 
 

@@ -26,6 +26,7 @@ def demo_protocol() -> dict:
             "id": "P1", "metric": "effect", "null": "effect < 0.10", "direction": "greater",
             "threshold": 0.10, "alpha": 0.05, "n_min": 20,
             "anti_vacuity": {"require_finite": True, "reject_degenerate": True},
+            "refutes_claim": False,
         }],
         "implementation": {"name": "threshold", "version": "1", "threshold": 0.5},
         "data_contract": {"fields": {"x": "finite number", "y": "0 or 1"}},
@@ -58,6 +59,14 @@ def _prediction_status(checks: list[dict]) -> PredictionStatus:
     if statuses == {"SUPPORTED"}:
         return PredictionStatus.SUPPORTED
     return PredictionStatus.NOT_SUPPORTED
+
+
+def _is_refutation_criterion(protocol: dict, checks: list[dict]) -> bool:
+    """Return true only for failed predictions explicitly marked as refutations."""
+    return any(
+        prediction.get("refutes_claim") is True and check.get("status") == "NOT_SUPPORTED"
+        for prediction, check in zip(protocol.get("predictions", []), checks)
+    )
 
 
 def _demo(out: str) -> int:
@@ -111,12 +120,14 @@ def main(argv: list[str] | None = None) -> int:
             prediction=prediction,
             verifier=verifier,
             protocol_valid=not protocol_errors,
+            refutation_criterion=_is_refutation_criterion(protocol, checks),
             void_reason="; ".join(protocol_errors) if protocol_errors else None,
         )
         write_json(args.out, {
             "claim_verdict": claim.verdict.value,
             "prediction_status": prediction.value,
             "verifier_status": verifier.value,
+            "refutation_criterion": _is_refutation_criterion(protocol, checks),
             "claim_reasons": claim.reasons,
             "evidence_ids": claim.evidence_ids,
             "qualification": "conditional on this protocol, implementation, data, and verifier",
