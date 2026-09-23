@@ -11,12 +11,12 @@ python -m venv .venv && . .venv/bin/activate
 pip install -e .
 veritas demo --out run
 veritas attack run/protocol.json --out run/attacks.json
-veritas experiment run/protocol.json --out run/result.json
+veritas experiment run/protocol.json --data run/data.json --out run/result.json
 veritas verdict run/protocol.json run/attacks.json run/result.json --out run/verdict.json
 python -m unittest discover -s tests -v
 ```
 
-The demo is a fully executable synthetic experiment. It demonstrates the machinery, including a deliberately explicit null and verifier attack controls. It is not evidence for a real-world scientific claim.
+The demo is a fully executable synthetic experiment. It demonstrates the machinery, including an explicit null, anti-vacuity policy, and verifier attack controls. It is not evidence for a real-world scientific claim. Its perfect synthetic result is deliberately rejected by the anti-vacuity policy.
 
 ## Pipeline
 
@@ -24,4 +24,4 @@ The demo is a fully executable synthetic experiment. It demonstrates the machine
 
 Artifacts are canonical JSON with SHA-256 digests. Amendments create a new protocol with `parent_digest`; history is not overwritten. Results include protocol, data, implementation, and environment metadata.
 
-The default runner is intentionally dependency-free and conservative. Before using real data, add domain-appropriate handling for dependence, missingness, confidence intervals, multiple comparisons, and data sealing. See `SECURITY.md`.
+The default runner is intentionally dependency-free and conservative. Before using real data, add domain-appropriate handling for dependence, missingness, confidence intervals, multiple comparisons, and data sealing. See `SECURITY.md` and `docs/architecture.md`.
