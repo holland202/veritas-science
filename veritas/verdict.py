@@ -1,8 +1,4 @@
-"""Layered verdict semantics for Veritas.
-
-Prediction status, verifier status, and claim verdict are separate state
-machines. Measured evidence is admissible input, not a claim conclusion.
-"""
+"""Layered verdict semantics for Veritas."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -50,22 +46,20 @@ class VerdictResult:
 
 
 def admissibility(records: Iterable[EvidenceRecord]) -> VerdictResult | None:
-    """Return a blocking result, or ``None`` when evidence is admissible."""
     items = list(records)
-    ids = [r.evidence_id for r in items]
+    ids = [record.evidence_id for record in items]
     if not items:
         return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["no evidence supplied"], ids)
-    if any(not r.content_hash or r.integrity.get("valid") is False for r in items):
+    if any(not record.content_hash or record.integrity.get("valid") is False for record in items):
         return VerdictResult(Verdict.INVALID_EVIDENCE, ["evidence integrity is invalid"], ids)
-    inadmissible = [r for r in items if r.evidence_state is not EvidenceState.MEASURED]
+    inadmissible = [record for record in items if record.evidence_state is not EvidenceState.MEASURED]
     if inadmissible:
-        states = sorted({r.evidence_state.value for r in inadmissible})
+        states = sorted({record.evidence_state.value for record in inadmissible})
         return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, [f"inadmissible evidence states: {', '.join(states)}"], ids)
     return None
 
 
 def fail_closed(records: Iterable[EvidenceRecord]) -> VerdictResult:
-    """Check admissibility without claiming that measured evidence proves a claim."""
     items = list(records)
     blocked = admissibility(items)
     if blocked is not None:
@@ -73,7 +67,7 @@ def fail_closed(records: Iterable[EvidenceRecord]) -> VerdictResult:
     return VerdictResult(
         Verdict.INSUFFICIENT_EVIDENCE,
         ["measured evidence is admissible but no claim comparison was supplied"],
-        [r.evidence_id for r in items],
+        [record.evidence_id for record in items],
     )
 
 
@@ -86,36 +80,24 @@ def claim_verdict(
     refutation_criterion: bool = False,
     void_reason: str | None = None,
 ) -> VerdictResult:
-    """Combine protocol, evidence, verifier, and prediction layers.
-
-    A failed prediction becomes ``REFUTED`` only when the frozen protocol
-    explicitly designates that prediction as a claim-refutation criterion.
-    Otherwise it remains ``INSUFFICIENT_EVIDENCE``: failure to support a
-    prediction is not automatically evidence that the broader claim is false.
-    """
+    """Combine layers without equating prediction failure with refutation."""
     items = list(records)
-    ids = [r.evidence_id for r in items]
+    ids = [record.evidence_id for record in items]
     if not protocol_valid:
         return VerdictResult(Verdict.VOID, [void_reason or "protocol is invalid or not frozen"], ids)
     blocked = admissibility(items)
     if blocked is not None:
         return blocked
-    v = VerifierStatus(verifier)
-    p = PredictionStatus(prediction)
-    if v is not VerifierStatus.PASS:
-        return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, [f"verifier status: {v.value}"], ids)
-    if p is PredictionStatus.SUPPORTED:
+    verifier_status = VerifierStatus(verifier)
+    prediction_status = PredictionStatus(prediction)
+    if verifier_status is not VerifierStatus.PASS:
+        return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, [f"verifier status: {verifier_status.value}"], ids)
+    if prediction_status is PredictionStatus.SUPPORTED:
         return VerdictResult(Verdict.SUPPORTED, ["prediction supported under the valid protocol and verifier"], ids)
-    if p is PredictionStatus.NOT_SUPPORTED and refutation_criterion:
-        return VerdictResult(Verdict.REFUTED, ["refutation criterion was not supported under the valid protocol"], ids)
-    if p is PredictionStatus.NOT_SUPPORTED:
-        return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction was not supported; protocol does not designate it as a refutation criterion"], ids)
-    if p is PredictionStatus.INVALID:
+    if prediction_status is PredictionStatus.NOT_SUPPORTED and refutation_criterion:
+        return VerdictResult(Verdict.REFUTED, ["explicit refutation criterion was not supported"], ids)
+    if prediction_status is PredictionStatus.NOT_SUPPORTED:
+        return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction failed without explicit refutation authority"], ids)
+    if prediction_status is PredictionStatus.INVALID:
         return VerdictResult(Verdict.INVALID_EVIDENCE, ["prediction result is invalid"], ids)
     return VerdictResult(Verdict.INSUFFICIENT_EVIDENCE, ["prediction result is indeterminate"], ids)
-
-
-__all__ = [
-    "PredictionStatus", "VerifierStatus", "Verdict", "VerdictResult",
-    "admissibility", "claim_verdict", "fail_closed",
-]

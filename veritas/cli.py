@@ -13,7 +13,6 @@ from .verdict import PredictionStatus, VerifierStatus, claim_verdict
 
 
 def demo_protocol() -> dict:
-    """Return the original executable threshold protocol."""
     return {
         "title": "Deterministic threshold demonstration",
         "claim": "The fixed threshold classifier improves on majority baseline by at least 0.10.",
@@ -35,7 +34,6 @@ def demo_protocol() -> dict:
 
 
 def _result_evidence(result: dict) -> EvidenceRecord:
-    """Represent an executed result as measured input, not as a conclusion."""
     return EvidenceRecord(
         evidence_id=f"result:{result.get('data_digest', sha256(result))}",
         observation_id="experiment-result",
@@ -61,8 +59,7 @@ def _prediction_status(checks: list[dict]) -> PredictionStatus:
     return PredictionStatus.NOT_SUPPORTED
 
 
-def _is_refutation_criterion(protocol: dict, checks: list[dict]) -> bool:
-    """Return true only for failed predictions explicitly marked as refutations."""
+def _refutation_criterion(protocol: dict, checks: list[dict]) -> bool:
     return any(
         prediction.get("refutes_claim") is True and check.get("status") == "NOT_SUPPORTED"
         for prediction, check in zip(protocol.get("predictions", []), checks)
@@ -85,55 +82,40 @@ def _demo(out: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="veritas")
     sub = parser.add_subparsers(dest="command", required=True)
-    demo = sub.add_parser("demo")
-    demo.add_argument("--out", default="run")
-    attack_cmd = sub.add_parser("attack")
-    attack_cmd.add_argument("protocol")
-    attack_cmd.add_argument("--out", required=True)
-    experiment = sub.add_parser("experiment")
-    experiment.add_argument("protocol")
-    experiment.add_argument("--data", required=True)
-    experiment.add_argument("--out", required=True)
-    verdict = sub.add_parser("verdict")
-    verdict.add_argument("protocol")
-    verdict.add_argument("attacks")
-    verdict.add_argument("result")
-    verdict.add_argument("--out", required=True)
+    demo = sub.add_parser("demo"); demo.add_argument("--out", default="run")
+    attack_cmd = sub.add_parser("attack"); attack_cmd.add_argument("protocol"); attack_cmd.add_argument("--out", required=True)
+    experiment = sub.add_parser("experiment"); experiment.add_argument("protocol"); experiment.add_argument("--data", required=True); experiment.add_argument("--out", required=True)
+    verdict = sub.add_parser("verdict"); verdict.add_argument("protocol"); verdict.add_argument("attacks"); verdict.add_argument("result"); verdict.add_argument("--out", required=True)
     args = parser.parse_args(argv)
     if args.command == "demo":
         return _demo(args.out)
-
-    protocol_obj = read_json(args.protocol)
-    protocol = protocol_obj.get("payload", protocol_obj)
+    protocol_object = read_json(args.protocol)
+    protocol = protocol_object.get("payload", protocol_object)
     if args.command == "attack":
         write_json(args.out, attack(protocol))
     elif args.command == "experiment":
         write_json(args.out, run(protocol, read_json(args.data), protocol["analysis"].get("seed")))
     else:
         attacks, result = read_json(args.attacks), read_json(args.result)
-        checks = [check_prediction(p, result) for p in protocol["predictions"]]
+        checks = [check_prediction(prediction, result) for prediction in protocol["predictions"]]
         prediction = _prediction_status(checks)
         verifier = VerifierStatus.PASS if attacks.get("passed") else VerifierStatus.FAIL
         protocol_errors = validate_protocol(protocol)
+        refutation = _refutation_criterion(protocol, checks)
         claim = claim_verdict(
-            [_result_evidence(result)],
-            prediction=prediction,
-            verifier=verifier,
-            protocol_valid=not protocol_errors,
-            refutation_criterion=_is_refutation_criterion(protocol, checks),
+            [_result_evidence(result)], prediction=prediction, verifier=verifier,
+            protocol_valid=not protocol_errors, refutation_criterion=refutation,
             void_reason="; ".join(protocol_errors) if protocol_errors else None,
         )
         write_json(args.out, {
             "claim_verdict": claim.verdict.value,
             "prediction_status": prediction.value,
             "verifier_status": verifier.value,
-            "refutation_criterion": _is_refutation_criterion(protocol, checks),
+            "refutation_criterion": refutation,
             "claim_reasons": claim.reasons,
             "evidence_ids": claim.evidence_ids,
             "qualification": "conditional on this protocol, implementation, data, and verifier",
-            "predictions": checks,
-            "attacks": attacks,
-            "result": result,
+            "predictions": checks, "attacks": attacks, "result": result,
         })
     return 0
 
