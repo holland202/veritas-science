@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="310" viewBox="0 0 1200 310" role="img" aria-labelledby="title desc">
+<title id="title">Veritas scientific validation pipeline</title>
+<desc id="desc">Claim becomes a frozen protocol, is attacked, executed on sealed data, and produces a qualified verdict with failures retained.</desc>
+<defs><style>.box{fill:#102a43;stroke:#7cc4fa;stroke-width:2}.text{fill:#fff;font:16px sans-serif}.small{fill:#d9f0ff;font:13px sans-serif}.arrow{stroke:#7cc4fa;stroke-width:3;marker-end:url(#m)}</style><marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#7cc4fa"/></marker></defs>
+<rect width="1200" height="310" fill="#061826"/>
+<g transform="translate(25 45)"><rect class="box" width="145" height="75" rx="12"/><text class="text" x="72" y="30" text-anchor="middle">CLAIM</text><text class="small" x="72" y="53" text-anchor="middle">status + prior art</text></g>
+<g transform="translate(205 45)"><rect class="box" width="175" height="75" rx="12"/><text class="text" x="87" y="30" text-anchor="middle">PREREGISTER</text><text class="small" x="87" y="53" text-anchor="middle">null + predictions</text></g>
+<g transform="translate(415 45)"><rect class="box" width="155" height="75" rx="12"/><text class="text" x="77" y="30" text-anchor="middle">FREEZE</text><text class="small" x="77" y="53" text-anchor="middle">hash + assumptions</text></g>
+<g transform="translate(605 45)"><rect class="box" width="175" height="75" rx="12"/><text class="text" x="87" y="30" text-anchor="middle">ATTACK VERIFIER</text><text class="small" x="87" y="53" text-anchor="middle">sabotage + nulls</text></g>
+<g transform="translate(815 45)"><rect class="box" width="160" height="75" rx="12"/><text class="text" x="80" y="30" text-anchor="middle">SEALED RUN</text><text class="small" x="80" y="53" text-anchor="middle">fresh data</text></g>
+<g transform="translate(1010 45)"><rect class="box" width="165" height="75" rx="12"/><text class="text" x="82" y="30" text-anchor="middle">QUALIFIED</text><text class="small" x="82" y="53" text-anchor="middle">support/refute</text></g>
+<path class="arrow" d="M170 82h30M380 82h35M570 82h35M780 82h35M975 82h35" fill="none"/>
+<rect x="250" y="190" width="700" height="65" rx="14" fill="#3d1f2b" stroke="#ff9f9f" stroke-width="2"/><text class="text" x="600" y="218" text-anchor="middle">FAILURES ARE EVIDENCE</text><text class="small" x="600" y="240" text-anchor="middle">retain refutations, amend by lineage, never overwrite history</text>
+<path class="arrow" d="M690 120v45H600v25M895 120v45H600" fill="none"/>
+</svg>
