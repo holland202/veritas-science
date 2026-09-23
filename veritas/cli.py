@@ -46,13 +46,24 @@ def _demo(out: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="veritas")
     sub = parser.add_subparsers(dest="command", required=True)
-    demo = sub.add_parser("demo"); demo.add_argument("--out", default="run")
-    attack_cmd = sub.add_parser("attack"); attack_cmd.add_argument("protocol"); attack_cmd.add_argument("--out", required=True)
-    experiment = sub.add_parser("experiment"); experiment.add_argument("protocol"); experiment.add_argument("--data", required=True); experiment.add_argument("--out", required=True)
-    verdict = sub.add_parser("verdict"); verdict.add_argument("protocol"); verdict.add_argument("attacks"); verdict.add_argument("result"); verdict.add_argument("--out", required=True)
+    demo = sub.add_parser("demo")
+    demo.add_argument("--out", default="run")
+    attack_cmd = sub.add_parser("attack")
+    attack_cmd.add_argument("protocol")
+    attack_cmd.add_argument("--out", required=True)
+    experiment = sub.add_parser("experiment")
+    experiment.add_argument("protocol")
+    experiment.add_argument("--data", required=True)
+    experiment.add_argument("--out", required=True)
+    verdict = sub.add_parser("verdict")
+    verdict.add_argument("protocol")
+    verdict.add_argument("attacks")
+    verdict.add_argument("result")
+    verdict.add_argument("--out", required=True)
     args = parser.parse_args(argv)
     if args.command == "demo":
         return _demo(args.out)
+
     protocol_obj = read_json(args.protocol)
     protocol = protocol_obj.get("payload", protocol_obj)
     if args.command == "attack":
@@ -62,8 +73,22 @@ def main(argv: list[str] | None = None) -> int:
     else:
         attacks, result = read_json(args.attacks), read_json(args.result)
         checks = [check_prediction(p, result) for p in protocol["predictions"]]
-        status = "SUPPORTED" if attacks["passed"] and all(x["status"] == "SUPPORTED" for x in checks) else "NOT_SUPPORTED"
-        write_json(args.out, {"status": status, "qualification": "conditional on this protocol, implementation, data, and verifier", "predictions": checks, "attacks": attacks, "result": result})
+        prediction_status = "SUPPORTED" if all(x["status"] == "SUPPORTED" for x in checks) else (
+            "INDETERMINATE" if any(x["status"] == "INDETERMINATE" for x in checks) else "NOT_SUPPORTED"
+        )
+        verifier_status = "PASS" if attacks.get("passed") else "FAIL"
+        claim_status = "SUPPORTED" if attacks.get("passed") and prediction_status == "SUPPORTED" else (
+            "REFUTED" if attacks.get("passed") and prediction_status == "NOT_SUPPORTED" else "INSUFFICIENT_EVIDENCE"
+        )
+        write_json(args.out, {
+            "claim_verdict": claim_status,
+            "prediction_status": prediction_status,
+            "verifier_status": verifier_status,
+            "qualification": "conditional on this protocol, implementation, data, and verifier",
+            "predictions": checks,
+            "attacks": attacks,
+            "result": result,
+        })
     return 0
 
 

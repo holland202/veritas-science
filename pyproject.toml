@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veritas-science"
-version = "0.1.0"
+version = "0.1.1"
 description = "Adversarial preregistered scientific validation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,3 +16,6 @@ veritas = "veritas.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["veritas*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

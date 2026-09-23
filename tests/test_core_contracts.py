@@ -8,11 +8,11 @@ from veritas.verdict import Verdict, fail_closed
 from veritas.attacks.vacuity import scan
 
 
-def test_fail_closed_measurement_only():
-    rec = EvidenceRecord(
+def _record(state=EvidenceState.MEASURED):
+    return EvidenceRecord(
         evidence_id="e-1",
         observation_id="o-1",
-        evidence_state=EvidenceState.MEASURED,
+        evidence_state=state,
         source_type="simulation",
         source_identifier="sim-1",
         timestamp="2026-01-01T00:00:00Z",
@@ -20,23 +20,15 @@ def test_fail_closed_measurement_only():
         provenance={"status": "ASSERTED"},
         integrity={"valid": True},
     )
-    result = fail_closed([rec])
-    assert result.verdict is Verdict.SUPPORTED
+
+
+def test_measured_evidence_is_admissible_but_not_support():
+    result = fail_closed([_record()])
+    assert result.verdict is Verdict.INSUFFICIENT_EVIDENCE
 
 
 def test_inferred_evidence_is_rejected():
-    rec = EvidenceRecord(
-        evidence_id="e-2",
-        observation_id="o-2",
-        evidence_state=EvidenceState.INFERRED,
-        source_type="model",
-        source_identifier="infer-1",
-        timestamp="2026-01-01T00:00:00Z",
-        content_hash="efgh5678",
-        provenance={"status": "ASSERTED"},
-        integrity={"valid": True},
-    )
-    result = fail_closed([rec])
+    result = fail_closed([_record(EvidenceState.INFERRED)])
     assert result.verdict is Verdict.INSUFFICIENT_EVIDENCE
 
 
@@ -57,6 +49,7 @@ def test_schema_files_are_valid_json():
 
 def test_manifest_records_environment():
     from veritas.provenance import manifest
+
     data = manifest(Path(__file__).resolve().parents[1], files=["README.md"], seed=7)
     assert "environment" in data
     assert "seed" in data
