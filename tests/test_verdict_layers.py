@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from veritas.evidence import EvidenceRecord, EvidenceState
+from veritas.protocol import validate_protocol
 from veritas.verdict import PredictionStatus, Verdict, VerifierStatus, claim_verdict, fail_closed
 
 
@@ -49,3 +50,32 @@ def test_invalid_evidence_is_invalid():
 def test_invalid_protocol_voids_claim():
     result = claim_verdict([record()], prediction=PredictionStatus.SUPPORTED, verifier=VerifierStatus.PASS, protocol_valid=False)
     assert result.verdict is Verdict.VOID
+
+
+def test_protocol_requires_explicit_refutes_claim():
+    protocol = {
+        "title": "demo",
+        "claim": "x",
+        "epistemic_status": "measured",
+        "assumptions": ["a"],
+        "prior_art": ["b"],
+        "hypothesis": "h",
+        "null": "n",
+        "predictions": [{
+            "id": "P1",
+            "metric": "effect",
+            "null": "effect < 0.1",
+            "direction": "greater",
+            "threshold": 0.1,
+            "alpha": 0.05,
+            "n_min": 20,
+            "anti_vacuity": {"reject_degenerate": True},
+        }],
+        "implementation": {"threshold": 0.5},
+        "data_contract": {"fields": {"x": "number"}},
+        "analysis": {"order_invariant": True},
+    }
+    assert "prediction missing:refutes_claim" in validate_protocol(protocol)
+
+    protocol["predictions"][0]["refutes_claim"] = "no"
+    assert "refutes_claim must be boolean" in validate_protocol(protocol)

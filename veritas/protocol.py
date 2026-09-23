@@ -14,7 +14,7 @@ def validate_protocol(p):
     if not isinstance(predictions,list) or not predictions: errors.append("predictions must be non-empty")
     ids=set()
     for x in predictions:
-        for k in ("id","metric","null","direction","threshold","alpha","n_min","anti_vacuity"):
+        for k in ("id","metric","null","direction","threshold","alpha","n_min","anti_vacuity","refutes_claim"):
             if k not in x: errors.append(f"prediction missing:{k}")
         if x.get("id") in ids: errors.append("duplicate prediction:"+str(x.get("id")))
         ids.add(x.get("id"))
@@ -23,7 +23,9 @@ def validate_protocol(p):
         if not 0 < x.get("alpha",0) < 1: errors.append("alpha must be in (0,1)")
         if x.get("n_min",0) < 2: errors.append("n_min must be >= 2")
         if not isinstance(x.get("anti_vacuity"),dict) or not x.get("anti_vacuity"): errors.append("anti-vacuity rule required")
-        if "refutes_claim" in x and not isinstance(x["refutes_claim"], bool): errors.append("refutes_claim must be boolean")
+        if "refutes_claim" not in x:
+            continue
+        if not isinstance(x["refutes_claim"], bool): errors.append("refutes_claim must be boolean")
     return errors
 
 
