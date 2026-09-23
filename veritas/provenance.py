@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from . import __version__
+
 
 def file_sha256(path: str | Path) -> str:
     digest = hashlib.sha256()
@@ -40,7 +42,7 @@ def manifest(root: str | Path = ".", files: list[str] | None = None, seed: int |
             "python": sys.version.split()[0],
             "platform": platform.platform(),
             "machine": platform.machine(),
-            "veritas": "0.1.0",
+            "veritas": __version__,
         },
         "seed": seed,
     }

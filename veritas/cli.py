@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .attacks import attack
-from .core import read_json, write_json
+from .core import read_json, sha256, write_json
+from .evidence import EvidenceRecord, EvidenceState
 from .experiment import check_prediction, run
-from .protocol import freeze
+from .protocol import freeze, validate_protocol
+from .verdict import PredictionStatus, VerifierStatus, claim_verdict
 
 
 def demo_protocol() -> dict:
@@ -28,6 +31,33 @@ def demo_protocol() -> dict:
         "data_contract": {"fields": {"x": "finite number", "y": "0 or 1"}},
         "analysis": {"order_invariant": True, "seed": 7, "sealed_data": False},
     }
+
+
+def _result_evidence(result: dict) -> EvidenceRecord:
+    """Represent an executed result as measured input, not as a conclusion."""
+    return EvidenceRecord(
+        evidence_id=f"result:{result.get('data_digest', sha256(result))}",
+        observation_id="experiment-result",
+        evidence_state=EvidenceState.MEASURED,
+        source_type="veritas.experiment",
+        source_identifier="threshold-reference",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        content_hash=sha256(result),
+        provenance={"status": "EXECUTED", "semantic_role": "admissible_observation"},
+        integrity={"valid": True},
+        metadata={"result": result},
+    )
+
+
+def _prediction_status(checks: list[dict]) -> PredictionStatus:
+    statuses = {check.get("status") for check in checks}
+    if "INVALID" in statuses:
+        return PredictionStatus.INVALID
+    if "INDETERMINATE" in statuses:
+        return PredictionStatus.INDETERMINATE
+    if statuses == {"SUPPORTED"}:
+        return PredictionStatus.SUPPORTED
+    return PredictionStatus.NOT_SUPPORTED
 
 
 def _demo(out: str) -> int:
@@ -73,17 +103,22 @@ def main(argv: list[str] | None = None) -> int:
     else:
         attacks, result = read_json(args.attacks), read_json(args.result)
         checks = [check_prediction(p, result) for p in protocol["predictions"]]
-        prediction_status = "SUPPORTED" if all(x["status"] == "SUPPORTED" for x in checks) else (
-            "INDETERMINATE" if any(x["status"] == "INDETERMINATE" for x in checks) else "NOT_SUPPORTED"
-        )
-        verifier_status = "PASS" if attacks.get("passed") else "FAIL"
-        claim_status = "SUPPORTED" if attacks.get("passed") and prediction_status == "SUPPORTED" else (
-            "REFUTED" if attacks.get("passed") and prediction_status == "NOT_SUPPORTED" else "INSUFFICIENT_EVIDENCE"
+        prediction = _prediction_status(checks)
+        verifier = VerifierStatus.PASS if attacks.get("passed") else VerifierStatus.FAIL
+        protocol_errors = validate_protocol(protocol)
+        claim = claim_verdict(
+            [_result_evidence(result)],
+            prediction=prediction,
+            verifier=verifier,
+            protocol_valid=not protocol_errors,
+            void_reason="; ".join(protocol_errors) if protocol_errors else None,
         )
         write_json(args.out, {
-            "claim_verdict": claim_status,
-            "prediction_status": prediction_status,
-            "verifier_status": verifier_status,
+            "claim_verdict": claim.verdict.value,
+            "prediction_status": prediction.value,
+            "verifier_status": verifier.value,
+            "claim_reasons": claim.reasons,
+            "evidence_ids": claim.evidence_ids,
             "qualification": "conditional on this protocol, implementation, data, and verifier",
             "predictions": checks,
             "attacks": attacks,
