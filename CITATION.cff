@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "veritas-science: adversarial, preregistered, evidence-first scientific validation"
+type: software
+authors:
+  - family-names: "Holland"
+    given-names: "Chad"
+    alias: "holland202"
+    orcid: "https://orcid.org/0009-0004-1943-0585"
+version: "0.1.1"
+repository-code: "https://github.com/holland202/veritas-science"
+url: "https://github.com/holland202/veritas-science"
+license: MIT

@@ -1,0 +1,25 @@
+{
+  "title": "veritas-science: adversarial, preregistered, evidence-first scientific validation",
+  "description": "Executable scientific validation framework for adversarial, preregistered, evidence-first experimentation.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Holland, Chad",
+      "orcid": "0009-0004-1943-0585"
+    }
+  ],
+  "keywords": [
+    "preregistration",
+    "reproducibility",
+    "scientific validation",
+    "adversarial testing"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/holland202/veritas-science",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
