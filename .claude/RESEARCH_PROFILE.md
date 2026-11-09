@@ -1,0 +1,2 @@
+# Research Profile — Veritas Science
+Read README.md and project protocols before decisions. This is evidence-first scientific validation tooling: distinguish evidence admissibility, verifier state, prediction, and claim verdict. Missing or inferred evidence cannot become measured evidence. Do not call reproduction independent verification. Preserve negative results. No unapproved scientific runs, code changes, or release merges.
